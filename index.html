@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hashini - Personal Finance Management System</title>
+    <!-- Chart.js Library for Financial Analytics Graphs Included via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #16a085;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --danger-color: #c0392b;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --info-color: #2980b9;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background-color: #34495e;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .nav-tabs button {
+            background-color: inherit;
+            color: #bdc3c7;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 0;
+            outline: none;
+            cursor: pointer;
+            font-size: 15px;
+            transition: 0.3s;
+            font-weight: bold;
+        }
+
+        .nav-tabs button:hover {
+            background-color: #4b6584;
+            color: white;
+        }
+
+        .nav-tabs button.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+            flex: 1;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-grid .card {
+            margin-bottom: 0;
+        }
+
+        .total-display {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin: 10px 0;
+        }
+
+        .sub-total {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cccccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 15px;
+        }
+
+        .dynamic-input {
+            display: none;
+            margin-top: 10px;
+        }
+
+        button.btn {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        button.btn:hover {
+            background-color: #11806a;
+        }
+
+        .btn-inline-container {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-action {
+            padding: 6px 12px !important;
+            font-size: 13px !important;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+        }
+
+        .btn-danger { background-color: var(--danger-color); }
+        .btn-success { background-color: var(--success-color); }
+        .btn-warning { background-color: var(--warning-color); }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            color: var(--primary-color);
+        }
+
+        .backup-btns {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .backup-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 260px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        /* Modal Box Styling */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 25px;
+            border-radius: 10px;
+            width: 85%;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary-color);
+            border-bottom: 2px solid #f2f2f2;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .close-modal {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            width: 100%;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .trial-text {
+            color: var(--danger-color);
+            font-weight: bold;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .alert-box {
+            background-color: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        footer {
+            background-color: #2c3e50;
+            color: #bdc3c7;
+            text-align: center;
+            padding: 15px;
+            font-size: 14px;
+            font-weight: 500;
+            border-top: 3px solid var(--secondary-color);
+            margin-top: auto;
+            letter-spacing: 1px;
+        }
+
+        /* Admin Notification Custom Modal Styles */
+        .admin-modal {
+            display: none; 
+            position: fixed; 
+            z-index: 9999; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.5); 
+            align-items: center;
+            justify-content: center;
+        }
+        .admin-modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 85%;
+            max-width: 450px;
+            position: relative;
+            animation: adminSlideDown 0.3s ease-out;
+        }
+        .admin-modal-close {
+            color: #aaa;
+            position: absolute;
+            right: 15px;
+            top: 10px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .admin-modal-close:hover {
+            color: #000;
+        }
+        .admin-modal-body {
+            text-align: center;
+            padding-top: 10px;
+        }
+        #adminModalMessage {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+            background: #f1f7fe;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid var(--secondary-color);
+            margin-top: 15px;
+            text-align: left;
+        }
+        @keyframes adminSlideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>Hashini - Finance Tracker Dashboard</header>
+
+    <!-- Welcome & Reminder Modal -->
+    <div id="summaryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">☀️ Hi Hashini!</div>
+            <div id="modal-body-content"></div>
+            <div id="modal-alerts-content"></div>
+            <div id="trial-days-display" class="trial-text">⚠️ Your free trial: Checking Status...</div>
+            <button class="close-modal" onclick="closeModal()">Close & Continue</button>
+        </div>
+    </div>
+
+    <!-- ADMIN POPUP MODAL FOR CUSTOM ANNOUNCEMENTS -->
+    <div id="adminModal" class="admin-modal">
+        <div class="admin-modal-content">
+            <span class="admin-modal-close" onclick="closeAdminModal()">&times;</span>
+            <div class="admin-modal-body">
+                <h3 style="margin-top: 0; color: var(--primary-color); text-align: center;">📢 New Announcement!</h3>
+                <p id="adminModalMessage"></p> 
+                <button class="btn" style="margin-top: 15px;" onclick="closeAdminModal()">OK, Got it</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="openTab('dashboard')">Dashboard</button>
+        <button class="tab-btn" onclick="openTab('income-expense')">Income & Expense</button>
+        <button class="tab-btn" onclick="openTab('accounts')">Accounts & FDs</button>
+        <button class="tab-btn" onclick="openTab('loans')">Loans Manager</button>
+        <button class="tab-btn" onclick="openTab('credit')">Lend & Borrow</button>
+        <button class="tab-btn" onclick="openTab('analytics')">Charts Analytics</button>
+        <button class="tab-btn" onclick="openTab('backup')">Data Backup</button>
+    </div>
+
+    <div class="container">
+
+        <!-- DASHBOARD TAB -->
+        <div id="dashboard" class="tab-content active">
+            <div id="dashboard-loan-warnings"></div>
+
+            <div class="dashboard-grid">
+                <div class="card">
+                    <h2>Total Net Worth (Cash + Banks + FDs)</h2>
+                    <div class="total-display" id="total-wealth">LKR 0.00</div>
+                </div>
+
+                <div class="card">
+                    <h2>Remaining Loans Liability</h2>
+                    <div class="total-display" id="total-loans-display" style="color:var(--danger-color);">LKR 0.00</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Liquid Asset Breakdown</h2>
+                <div id="dashboard-accounts-list"></div>
+                <div class="sub-total">
+                    <strong>Total Fixed Deposits (FD):</strong>
+                    <span id="dash-fd-total" style="color: var(--secondary-color); font-weight: bold;">LKR 0.00</span>
+                </div>
+                <div class="sub-total">
+                    <strong>Cash on Hand:</strong>
+                    <span id="dash-cash-total" style="font-weight: bold;">LKR 0.00</span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Recent Transactions & Management</h2>
+                <div class="table-responsive">
+                    <table id="recent-tx-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Account</th>
+                                <th>Amount</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- INCOME & EXPENSE TAB -->
+        <div id="income-expense" class="tab-content">
+            <div class="card">
+                <h2>Record Expense</h2>
+                <div class="form-group">
+                    <label>Expense Category:</label>
+                    <select id="exp-category" onchange="toggleOthersInput('exp')">
+                        <option value="Food">Food</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Rent">Rent</option>
+                        <option value="Bills">Bills</option>
+                        <option value="others">Others (Specify)</option>
+                    </select>
+                    <input type="text" id="exp-others-desc" class="dynamic-input" placeholder="Enter custom expense description">
+                </div>
+                <div class="form-group">
+                    <label>Paid From Account:</label>
+                    <select id="exp-account"></select>
+                </div>
+                <div class="form-group">
+                    <label>Amount (LKR):</label>
+                    <input type="number" id="exp-amount" placeholder="0.00">
+                </div>
+                <button class="btn" onclick="addExpense()">Add Expense</button>
+            </div>
+
+            <div class="card">
+                <h2>Record Income</h2>
+                <div class="form-group">
+                    <label>Income Source:</label>
+                    <select id="inc-category" onchange="toggleOthersInput('inc')">
+                        <option value="Salary">Salary</option>
+                        <option value="others">Others (Specify)</option>
+                    </select>
+                    <input type="text" id="inc-others-desc" class="dynamic-input" placeholder="Enter custom income source">
+                </div>
+                <div class="form-group">
+                    <label>Deposit To Account:</label>
+                    <select id="inc-account"></select>
+                </div>
+                <div class="form-group">
+                    <label>Amount (LKR):</label>
+                    <input type="number" id="inc-amount" placeholder="0.00">
+                </div>
+                <button class="btn" onclick="addIncome()">Add Income</button>
+            </div>
+        </div>
+
+        <!-- ACCOUNTS & FDS TAB -->
+        <div id="accounts" class="tab-content">
+            <div class="card">
+                <h2>Add New Bank Account</h2>
+                <div class="form-group">
+                    <label>Account Name:</label>
+                    <input type="text" id="new-acc-name" placeholder="e.g., Commercial Bank">
+                </div>
+                <div class="form-group">
+                    <label>Initial Balance (LKR):</label>
+                    <input type="number" id="new-acc-balance" placeholder="0.00">
+                </div>
+                <button class="btn" onclick="addNewAccount()">Add Account</button>
+            </div>
+
+            <div class="card">
+                <h2>Create New Fixed Deposit (FD)</h2>
+                <div class="form-group">
+                    <label>FD Reference Name / Bank:</label>
+                    <input type="text" id="fd-name" placeholder="e.g., BOC 6 Months FD">
+                </div>
+                <div class="form-group">
+                    <label>Principal Amount (LKR):</label>
+                    <input type="number" id="fd-amount" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label>Annual Interest Rate (%):</label>
+                    <input type="number" id="fd-rate" placeholder="0.00" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Duration (Months):</label>
+                    <input type="number" id="fd-months" placeholder="e.g., 6">
+                </div>
+                <button class="btn" onclick="addNewFD()">Save & Add FD</button>
+            </div>
+
+            <div class="card">
+                <h2>Active Fixed Deposits List</h2>
+                <div class="table-responsive">
+                    <table id="fd-table">
+                        <thead>
+                            <tr>
+                                <th>FD Name</th>
+                                <th>Amount</th>
+                                <th>Rate</th>
+                                <th>Duration</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOANS MANAGER TAB -->
+        <div id="loans" class="tab-content">
+            <div class="card">
+                <h2>Add / Track Loan Liability</h2>
+                <div class="form-group">
+                    <label>Loan Reference Name:</label>
+                    <input type="text" id="loan-name" placeholder="e.g., Car Loan">
+                </div>
+                <div class="form-group">
+                    <label>Remaining Months to Pay:</label>
+                    <input type="number" id="loan-months" placeholder="e.g., 24">
+                </div>
+                <div class="form-group">
+                    <label>Monthly EMI Amount (LKR):</label>
+                    <input type="number" id="loan-emi" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label>Monthly Due Date (Day of the month):</label>
+                    <input type="number" id="loan-duedate" placeholder="e.g., 10 (for 10th of every month)" min="1" max="31">
+                </div>
+                <button class="btn" onclick="addNewLoan()">Save Loan Profile</button>
+            </div>
+
+            <div class="card">
+                <h2>Active Loans & Liabilities</h2>
+                <div class="table-responsive">
+                    <table id="active-loans-table">
+                        <thead>
+                            <tr>
+                                <th>Loan Name</th>
+                                <th>Remaining Months</th>
+                                <th>Est. Balance</th>
+                                <th>Monthly EMI</th>
+                                <th>Due Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEND & BORROW TAB -->
+        <div id="credit" class="tab-content">
+            <div class="card">
+                <h2>Record Lending & Borrowing (Naya Ledger)</h2>
+                <div class="form-group">
+                    <label>Transaction Type:</label>
+                    <select id="credit-type">
+                        <option value="lent">I Lent Money To (Receivable)</option>
+                        <option value="borrowed">I Borrowed Money From (Payable)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Person Name:</label>
+                    <input type="text" id="credit-name" placeholder="Enter name">
+                </div>
+                <div class="form-group">
+                    <label>Amount (LKR):</label>
+                    <input type="number" id="credit-amount" placeholder="0.00">
+                </div>
+                <button class="btn" onclick="addCreditRecord()">Save Record</button>
+            </div>
+
+            <div class="card">
+                <h2>Active Personal Credit Ledger</h2>
+                <div class="table-responsive">
+                    <table id="credit-table">
+                        <thead>
+                            <tr>
+                                <th>Person Name</th>
+                                <th>Status / Type</th>
+                                <th>Remaining Balance</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- VISUAL CHARTS ANALYTICS TAB -->
+        <div id="analytics" class="tab-content">
+            <div class="dashboard-grid">
+                <div class="card">
+                    <h2>Income vs Expense Velocity</h2>
+                    <div class="chart-container">
+                        <canvas id="incomeExpenseChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Fixed Deposits Profile Distribution</h2>
+                    <div class="chart-container">
+                        <canvas id="fdDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DATA BACKUP TAB -->
+        <div id="backup" class="tab-content">
+            <div class="card">
+                <h2>Data Backup & Report Generation</h2>
+                <p>All data runs completely locally in your browser cache memory. Ensure your ledger is safely retained by generating backups.</p>
+                <div class="backup-btns">
+                    <button class="btn" style="background-color: #e67e22;" onclick="generateHTMLReport()">📥 Download Financial Statement (HTML Report)</button>
+                    <div class="backup-row">
+                        <button class="btn" style="background-color: var(--primary-color);" onclick="exportData()">Export Backup (.JSON)</button>
+                        <button class="btn" style="background-color: #7f8c8d;" onclick="document.getElementById('import-file').click()">Import Backup (.JSON)</button>
+                    </div>
+                </div>
+                <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importData(event)">
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        Developed by Buddhi Nipun
+    </footer>
+
+    <script>
+        let financeData = {
+            accounts: {
+                "cash": 0
+            },
+            fdsList: [],
+            loansList: [],
+            transactions: [],
+            credits: [],
+            trialStartDate: null
+        };
+
+        let chartInstances = {};
+
+        function init() {
+            const savedData = localStorage.getItem('hashini_finance_v4');
+            if (savedData) {
+                try {
+                    financeData = JSON.parse(savedData);
+                    if(!financeData.accounts) financeData.accounts = { "cash": 0 };
+                    if(!financeData.fdsList) financeData.fdsList = [];
+                    if(!financeData.loansList) financeData.loansList = [];
+                    if(!financeData.transactions) financeData.transactions = [];
+                    if(!financeData.credits) financeData.credits = [];
+                } catch(e) { console.error("Error loading cache layer", e); }
+            }
+            
+            // Manage Dynamic 30-Day Trial Status
+            if (!financeData.trialStartDate) {
+                financeData.trialStartDate = new Date().toISOString();
+                localStorage.setItem('hashini_finance_v4', JSON.stringify(financeData));
+            }
+            
+            updateDropdowns();
+            renderDashboard();
+            renderCredits();
+            renderFDs();
+            renderLoans();
+            showDailySummary();
+
+            // -------------------------------------------------------------
+            // 📢 [LINE 328] English මැසේජ් එක වෙනස් කරන්න ඕන තැන මෙන්න:
+            // -------------------------------------------------------------
+            let currentAdminMessage = "Please complete today's account entries before 6.00 PM."; 
+
+            if (currentAdminMessage && currentAdminMessage.trim() !== "") {
+                document.getElementById("adminModalMessage").innerText = currentAdminMessage;
+                document.getElementById("adminModal").style.display = "flex";
+            }
+        }
+
+        function closeAdminModal() {
+            document.getElementById("adminModal").style.display = "none";
+        }
+
+        function saveData() {
+            localStorage.setItem('hashini_finance_v4', JSON.stringify(financeData));
+            renderDashboard();
+            if (document.getElementById('analytics').classList.contains('active')) {
+                renderCharts();
+            }
+        }
+
+        function openTab(tabId) {
+            const contents = document.getElementsByClassName('tab-content');
+            for (let content of contents) content.classList.remove('active');
+            
+            const buttons = document.getElementsByClassName('tab-btn');
+            for (let btn of buttons) btn.classList.remove('active');
+
+            document.getElementById(tabId).classList.add("active");
+            event.currentTarget.classList.add("active");
+
+            if (tabId === 'analytics') {
+                renderCharts();
+            }
+        }
+
+        function toggleOthersInput(prefix) {
+            const category = document.getElementById(`${prefix}-category`).value;
+            const othersInput = document.getElementById(`${prefix}-others-desc`);
+            othersInput.style.display = (category === 'others') ? 'block' : 'none';
+        }
+
+        function updateDropdowns() {
+            const expAcc = document.getElementById('exp-account');
+            const incAcc = document.getElementById('inc-account');
+            if(!expAcc || !incAcc) return;
+            expAcc.innerHTML = ''; incAcc.innerHTML = '';
+
+            for (let accName in financeData.accounts) {
+                let displayName = accName === 'cash' ? 'Cash on Hand' : accName;
+                expAcc.innerHTML += `<option value="${accName}">${displayName}</option>`;
+                incAcc.innerHTML += `<option value="${accName}">${displayName}</option>`;
+            }
+        }
+
+        function addExpense() {
+            let cat = document.getElementById('exp-category').value;
+            const othersDesc = document.getElementById('exp-others-desc').value.trim();
+            const acc = document.getElementById('exp-account').value;
+            const amt = parseFloat(document.getElementById('exp-amount').value);
+
+            if (!acc) return alert('Please add a bank account first.');
+            if (!amt || amt <= 0) return alert('Please enter a valid amount.');
+            let finalDesc = cat === 'others' ? (othersDesc ? `Others: ${othersDesc}` : "Other Expense") : cat;
+
+            financeData.accounts[acc] -= amt;
+            financeData.transactions.unshift({ 
+                id: Date.now(), 
+                date: new Date().toLocaleDateString(), 
+                type: 'Expense', 
+                desc: finalDesc, 
+                account: acc,
+                amount: amt 
+            });
+            saveData();
+            alert('Expense recorded.');
+            document.getElementById('exp-amount').value = '';
+            document.getElementById('exp-others-desc').value = '';
+            document.getElementById('exp-others-desc').style.display = 'none';
+            document.getElementById('exp-category').value = 'Food';
+        }
+
+        function addIncome() {
+            let cat = document.getElementById('inc-category').value;
+            const othersDesc = document.getElementById('inc-others-desc').value.trim();
+            const acc = document.getElementById('inc-account').value;
+            const amt = parseFloat(document.getElementById('inc-amount').value);
+
+            if (!acc) return alert('Please add a bank account first.');
+            if (!amt || amt <= 0) return alert('Please enter a valid amount.');
+            let finalDesc = cat === 'others' ? (othersDesc ? `Others: ${othersDesc}` : "Other Income") : cat;
+
+            financeData.accounts[acc] += amt;
+            financeData.transactions.unshift({ 
+                id: Date.now(), 
+                date: new Date().toLocaleDateString(), 
+                type: 'Income', 
+                desc: finalDesc, 
+                account: acc,
+                amount: amt 
+            });
+            saveData();
+            alert('Income recorded.');
+            document.getElementById('inc-amount').value = '';
+            document.getElementById('inc-others-desc').value = '';
+            document.getElementById('inc-others-desc').style.display = 'none';
+            document.getElementById('inc-category').value = 'Salary';
+        }
+
+        function undoTransaction(txId) {
+            const txIndex = financeData.transactions.findIndex(t => t.id === txId);
+            if (txIndex === -1) return;
+
+            const tx = financeData.transactions[txIndex];
+            if (financeData.accounts[tx.account] !== undefined) {
+                if (tx.type === 'Income') financeData.accounts[tx.account] -= tx.amount;
+                else if (tx.type === 'Expense') financeData.accounts[tx.account] += tx.amount;
+            }
+            financeData.transactions.splice(txIndex, 1);
+            saveData();
+            alert('Transaction reversed.');
+        }
+
+        function addNewAccount() {
+            const name = document.getElementById('new-acc-name').value.trim();
+            const bal = parseFloat(document.getElementById('new-acc-balance').value) || 0;
+            if (!name) return alert('Enter a valid account name.');
+            if (financeData.accounts[name] !== undefined) return alert('Account already exists.');
+
+            financeData.accounts[name] = bal;
+            saveData(); updateDropdowns();
+            alert('Account added.');
+            document.getElementById('new-acc-name').value = '';
+            document.getElementById('new-acc-balance').value = '';
+        }
+
+        function addNewFD() {
+            const name = document.getElementById('fd-name').value.trim() || "Bank FD";
+            const amt = parseFloat(document.getElementById('fd-amount').value) || 0;
+            const rate = parseFloat(document.getElementById('fd-rate').value) || 0;
+            const months = parseInt(document.getElementById('fd-months').value) || 1;
+
+            if (amt <= 0 || rate <= 0) return alert('Enter valid FD details.');
+            
+            financeData.fdsList.push({ name, amount: amt, rate, months });
+            saveData(); renderFDs();
+            alert('Fixed Deposit registered.');
+            document.getElementById('fd-name').value = '';
+            document.getElementById('fd-amount').value = '';
+            document.getElementById('fd-rate').value = '';
+            document.getElementById('fd-months').value = '';
+        }
+
+        function renderFDs() {
+            const tbody = document.querySelector('#fd-table tbody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            financeData.fdsList.forEach((fd, index) => {
+                tbody.innerHTML += `<tr>
+                    <td><b>${fd.name}</b></td>
+                    <td>LKR ${fd.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td>${fd.rate}%</td>
+                    <td>${fd.months} Months</td>
+                    <td><button class="btn-action btn-danger" onclick="deleteFD(${index})">Delete</button></td>
+                </tr>`;
+            });
+        }
+
+        function deleteFD(index) {
+            if(confirm("Delete this Fixed Deposit entry?")) {
+                financeData.fdsList.splice(index, 1);
+                saveData(); renderFDs();
+            }
+        }
+
+        function addNewLoan() {
+            const name = document.getElementById('loan-name').value.trim() || "Unnamed Loan";
+            const months = parseInt(document.getElementById('loan-months').value);
+            const emi = parseFloat(document.getElementById('loan-emi').value);
+            const duedate = parseInt(document.getElementById('loan-duedate').value);
+
+            if (!months || !emi || !duedate || duedate < 1 || duedate > 31) {
+                return alert('Please enter valid loan allocation details. Due date must be between 1 and 31.');
+            }
+
+            financeData.loansList.push({ name, months, emi, duedate });
+            saveData(); renderLoans();
+            alert('Loan profile added successfully.');
+            document.getElementById('loan-name').value = '';
+            document.getElementById('loan-months').value = '';
+            document.getElementById('loan-emi').value = '';
+            document.getElementById('loan-duedate').value = '';
+        }
+
+        function renderLoans() {
+            const tbody = document.querySelector('#active-loans-table tbody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            financeData.loansList.forEach((loan, index) => {
+                let totalEstBalance = loan.emi * loan.months;
+                tbody.innerHTML += `<tr>
+                    <td><b>${loan.name}</b></td>
+                    <td>${loan.months} Months</td>
+                    <td>LKR ${totalEstBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td style="color:var(--danger-color); font-weight:bold;">LKR ${loan.emi.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td>Day ${loan.duedate}</td>
+                    <td>
+                        <div class="btn-inline-container">
+                            <button class="btn-action btn-success" onclick="payLoanEMI(${index})">Pay EMI</button>
+                            <button class="btn-action btn-danger" onclick="deleteLoan(${index})">Delete</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            checkLoanDueDates();
+        }
+
+        // --- FIXED COMPREHENSIVE POPUP SUMMARY LOGIC LAYER ---
+        function showDailySummary() {
+            let totalAccountsWealth = 0;
+            for (let a in financeData.accounts) {
+                totalAccountsWealth += financeData.accounts[a];
+            }
+            let totalFdWealth = financeData.fdsList.reduce((sum, f) => sum + f.amount, 0);
+            let netWorth = totalAccountsWealth + totalFdWealth;
+
+            let totalLoansLiability = financeData.loansList.reduce((sum, l) => sum + (l.emi * l.months), 0);
+
+            // Populate Main body statistics inside Summary Modal
+            let bodyHTML = `
+                <p>Welcome back to your finance workspace. Here is your automated health index statement for today:</p>
+                <div style="margin: 15px 0; padding: 12px; background: #f8f9fa; border-radius: 6px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <span><b>Total Net Worth:</b></span>
+                        <span style="color:var(--secondary-color); font-weight:bold;">LKR ${netWorth.toLocaleString(undefined, {minimumFractionDigits:2})}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <span><b>Outstanding Loans:</b></span>
+                        <span style="color:var(--danger-color); font-weight:bold;">LKR ${totalLoansLiability.toLocaleString(undefined, {minimumFractionDigits:2})}</span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal-body-content').innerHTML = bodyHTML;
+
+            // Compute and append real-time active alert notices
+            let alertsHTML = "";
+            let today = new Date().getDate();
+            financeData.loansList.forEach(loan => {
+                let diff = loan.duedate - today;
+                if (diff >= 0 && diff <= 5) {
+                    alertsHTML += `<div class="alert-box">⏳ <b>Upcoming Payment Alert:</b> Your EMI for <b>${loan.name}</b> (LKR ${loan.emi.toLocaleString()}) is due in ${diff} days (On Day ${loan.duedate}).</div>`;
+                } else if (diff < 0) {
+                    alertsHTML += `<div class="alert-box" style="background-color:#fce4e4; border-left-color:var(--danger-color);">⚠️ <b>Overdue Payment Alert:</b> Your EMI allocation for <b>${loan.name}</b> was due on Day ${loan.duedate}. Please update entries.</div>`;
+                }
+            });
+            document.getElementById('modal-alerts-content').innerHTML = alertsHTML || "<p style='color:var(--success-color); font-size:13px;'>✓ No urgent critical credit or loan deadlines detected for this cycle cycle.</p>";
+
+            // Compute dynamic 30 days safe trial window status
+            if (financeData.trialStartDate) {
+                let created = new Date(financeData.trialStartDate);
+                let diffTime = Math.abs(new Date() - created);
+                let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                let remaining = 30 - diffDays;
+                if (remaining < 0) remaining = 0;
+                document.getElementById('trial-days-display').innerText = `⚠️ Security Maintenance Evaluation License: ${remaining} days remaining in trial verification loop.`;
+            }
+
+            // Display UI presentation overlay
+            document.getElementById('summaryModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('summaryModal').style.display = 'none';
+        }
+
+        function renderDashboard() {
+            let totalAccountsWealth = 0;
+            let accountsHTML = "";
+            
+            for (let accName in financeData.accounts) {
+                let balance = financeData.accounts[accName];
+                totalAccountsWealth += balance;
+                let displayName = accName === 'cash' ? 'Cash on Hand' : accName;
+                
+                accountsHTML += `<div class="sub-total">
+                    <span>${displayName}:</span>
+                    <span>LKR ${balance.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                </div>`;
+            }
+            
+            document.getElementById('dashboard-accounts-list').innerHTML = accountsHTML;
+            document.getElementById('dash-cash-total').innerText = `LKR ${(financeData.accounts['cash'] || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+
+            let totalFdWealth = financeData.fdsList.reduce((sum, f) => sum + f.amount, 0);
+            document.getElementById('dash-fd-total').innerText = `LKR ${totalFdWealth.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+
+            let totalNetWorth = totalAccountsWealth + totalFdWealth;
+            document.getElementById('total-wealth').innerText = `LKR ${totalNetWorth.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+
+            let totalLoansLiability = financeData.loansList.reduce((sum, l) => sum + (l.emi * l.months), 0);
+            document.getElementById('total-loans-display').innerText = `LKR ${totalLoansLiability.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+
+            // Render transaction registers inside dashboard UI matrix
+            const tbody = document.querySelector('#recent-tx-table tbody');
+            if(tbody) {
+                tbody.innerHTML = '';
+                financeData.transactions.slice(0, 10).forEach(tx => {
+                    let styleColor = tx.type === 'Income' ? 'color:var(--success-color); font-weight:bold;' : 'color:var(--danger-color);';
+                    let dispAcc = tx.account === 'cash' ? 'Cash' : tx.account;
+                    tbody.innerHTML += `<tr>
+                        <td>${tx.date}</td>
+                        <td><span style="${styleColor}">${tx.type}</span></td>
+                        <td>${tx.desc}</td>
+                        <td>${dispAcc}</td>
+                        <td style="${styleColor}">LKR ${tx.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td><button class="btn-action btn-warning" onclick="undoTransaction(${tx.id})">Undo</button></td>
+                    </tr>`;
+                });
+            }
+        }
+
+        function checkLoanDueDates() {
+            let warningsDiv = document.getElementById('dashboard-loan-warnings');
+            if(!warningsDiv) return;
+            warningsDiv.innerHTML = '';
+            let today = new Date().getDate();
+
+            financeData.loansList.forEach(loan => {
+                let diff = loan.duedate - today;
+                if (diff >= 0 && diff <= 5) {
+                    warningsDiv.innerHTML += `<div class="card" style="border-left: 5px solid var(--warning-color); padding:15px; margin-bottom:15px;">
+                        <strong style="color:var(--warning-color);">⚠️ Loan Payment Reminder:</strong> 
+                        Your monthly payment of <b>LKR ${loan.emi.toLocaleString()}</b> for <b>${loan.name}</b> is due in ${diff} days (Day ${loan.duedate}).
+                    </div>`;
+                }
+            });
+        }
+
+        function payLoanEMI(index) {
+            let loan = financeData.loansList[index];
+            if (loan.months <= 0) return alert('This loan profile is already fully paid off.');
+
+            if(confirm(`Record monthly EMI payment of LKR ${loan.emi.toLocaleString()} for ${loan.name}? This reduces 1 month from duration.`)) {
+                loan.months -= 1;
+                financeData.transactions.unshift({
+                    id: Date.now(),
+                    date: new Date().toLocaleDateString(),
+                    type: 'Expense',
+                    desc: `Loan EMI: ${loan.name}`,
+                    account: 'cash',
+                    amount: loan.emi
+                });
+                
+                if (financeData.accounts['cash'] !== undefined) {
+                    financeData.accounts['cash'] -= loan.emi;
+                }
+                
+                if(loan.months === 0) {
+                    alert(`Congratulations! The loan "${loan.name}" has been fully settled and closed.`);
+                    financeData.loansList.splice(index, 1);
+                } else {
+                    alert('EMI payment tracked successfully.');
+                }
+                saveData(); renderLoans();
+            }
+        }
+
+        function deleteLoan(index) {
+            if(confirm("Are you sure you want to completely drop this loan profile tracking parameters?")) {
+                financeData.loansList.splice(index, 1);
+                saveData(); renderLoans();
+            }
+        }
+
+        function addCreditRecord() {
+            const type = document.getElementById('credit-type').value;
+            const name = document.getElementById('credit-name').value.trim();
+            const amt = parseFloat(document.getElementById('credit-amount').value);
+
+            if(!name || !amt || amt <= 0) return alert('Please input valid credentials for lending ledger maps.');
+
+            financeData.credits.push({ id: Date.now(), name, type, amount: amt });
+            saveData(); renderCredits();
+            alert('Ledger profile updated.');
+            document.getElementById('credit-name').value = '';
+            document.getElementById('credit-amount').value = '';
+        }
+
+        function renderCredits() {
+            const tbody = document.querySelector('#credit-table tbody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            financeData.credits.forEach((c, index) => {
+                let badge = c.type === 'lent' ? `<span style="color:var(--success-color); font-weight:bold;">Receivable (Lent)</span>` : `<span style="color:var(--danger-color); font-weight:bold;">Payable (Borrowed)</span>`;
+                tbody.innerHTML += `<tr>
+                    <td><b>${c.name}</b></td>
+                    <td>${badge}</td>
+                    <td>LKR ${c.amount.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    <td>
+                        <div class="btn-inline-container">
+                            <button class="btn-action btn-success" onclick="settleCredit(${index})">Settle / Clear</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        function settleCredit(index) {
+            let record = financeData.credits[index];
+            let amt = prompt(`Enter settlement amount to clear from ${record.name}'s balance (Current: LKR ${record.amount}):`, record.amount);
+            let settleAmt = parseFloat(amt);
+
+            if(!settleAmt || settleAmt <= 0 || settleAmt > record.amount) return alert('Invalid reduction transaction balance query verified.');
+
+            record.amount -= settleAmt;
+            
+            // Add automatic ledger transaction documentation entries
+            financeData.transactions.unshift({
+                id: Date.now(),
+                date: new Date().toLocaleDateString(),
+                type: record.type === 'lent' ? 'Income' : 'Expense',
+                desc: `Naya Settlement: ${record.name}`,
+                account: 'cash',
+                amount: settleAmt
+            });
+            if (financeData.accounts['cash'] !== undefined) {
+                if(record.type === 'lent') financeData.accounts['cash'] += settleAmt;
+                else financeData.accounts['cash'] -= settleAmt;
+            }
+
+            if(record.amount <= 0.01) {
+                financeData.credits.splice(index, 1);
+                alert('Profile balanced out and cleared completely from sheets.');
+            } else {
+                alert(`Partial payment processed. Remaining balance: LKR ${record.amount.toLocaleString()}`);
+            }
+            saveData(); renderCredits();
+        }
+
+        function renderCharts() {
+            // Destroy existing charts to prevent memory leak structural overlay errors
+            if(chartInstances['incExp']) chartInstances['incExp'].destroy();
+            if(chartInstances['fdPie']) chartInstances['fdPie'].destroy();
+
+            // Calculate analytical velocities mapping arrays data streams
+            let totalInc = financeData.transactions.filter(t => t.type === 'Income').reduce((s, t) => s + t.amount, 0);
+            let totalExp = financeData.transactions.filter(t => t.type === 'Expense').reduce((s, t) => s + t.amount, 0);
+
+            const ctx1 = document.getElementById('incomeExpenseChart').getContext('2d');
+            chartInstances['incExp'] = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: ['Total Income Stream', 'Total Expense Stream'],
+                    datasets: [{
+                        label: 'Volume Scale (LKR)',
+                        data: [totalInc, totalExp],
+                        backgroundColor: ['#27ae60', '#c0392b']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Fixed Deposits Distribution Map Profiles arrays logic setup
+            let fdLabels = financeData.fdsList.map(f => f.name);
+            let fdAmounts = financeData.fdsList.map(f => f.amount);
+
+            if(fdLabels.length === 0) {
+                fdLabels = ["No Active FD registered"];
+                fdAmounts = [0];
+            }
+
+            const ctx2 = document.getElementById('fdDistributionChart').getContext('2d');
+            chartInstances['fdPie'] = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: fdLabels,
+                    datasets: [{
+                        data: fdAmounts,
+                        backgroundColor: ['#2980b9', '#9b59b6', '#f1c40f', '#e67e22', '#16a085', '#34495e']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function generateHTMLReport() {
+            let totalAccountsWealth = 0;
+            let accountsRows = "";
+            for (let a in financeData.accounts) {
+                totalAccountsWealth += financeData.accounts[a];
+                accountsRows += `<tr><td>${a === 'cash' ? 'Cash on Hand' : a}</td><td>LKR ${financeData.accounts[a].toLocaleString()}</td></tr>`;
+            }
+            let totalFdWealth = financeData.fdsList.reduce((sum, f) => sum + f.amount, 0);
+            let netWorth = totalAccountsWealth + totalFdWealth;
+
+            let txRows = financeData.transactions.map(t => `<tr><td>${t.date}</td><td>${t.type}</td><td>${t.desc}</td><td>LKR ${t.amount.toLocaleString()}</td></tr>`).join('');
+
+            let reportHTML = `
+                <html>
+                <head><title>Financial Audit Summary Statement</title><style>body{font-family:sans-serif;padding:30px;} table{width:100%;border-collapse:collapse;margin-bottom:25px;} th,td{padding:10px;border:1px solid #ddd;text-align:left;} th{background:#f4f4f4;}</style></head>
+                <body>
+                    <h2>Hashini Ledger Workspace - Final Statement Account Analysis</h2>
+                    <p>Generated Schedule Stamp: ${new Date().toLocaleString()}</p>
+                    <hr/>
+                    <h3>Net Capital Wealth Index: LKR ${netWorth.toLocaleString()}</h3>
+                    <table>
+                        <thead><tr><th>Asset Location Profile</th><th>Liquid Valuations</th></tr></thead>
+                        <tbody>${accountsRows}<tr><td><b>Total Fixed Deposits (FD)</b></td><td><b>LKR ${totalFdWealth.toLocaleString()}</b></td></tr></tbody>
+                    </table>
+                    <h3>Recent Transaction History Activity Ledger</h3>
+                    <table>
+                        <thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Amount</th></tr></thead>
+                        <tbody>${txRows}</tbody>
+                    </table>
+                </body>
+                </html>
+            `;
+
+            const blob = new Blob([reportHTML], { type: 'text/html' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Hashini_Financial_Report_${Date.now()}.html`;
+            link.click();
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(financeData));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `Hashini_Ledger_Backup_${Date.now()}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(event) {
+            const fileReader = new FileReader();
+            fileReader.onload = function(e) {
+                try {
+                    const importedJSON = JSON.parse(e.target.result);
+                    if (importedJSON.accounts || importedJSON.transactions) {
+                        financeData = importedJSON;
+                        localStorage.setItem('hashini_finance_v4', JSON.stringify(financeData));
+                        alert('Cloud Backup file packet system parsed and synchronized to local storage caching channels successfully.');
+                        location.reload();
+                    } else {
+                        alert('Invalid data packet composition structures detected.');
+                    }
+                } catch (err) { alert('Failed to successfully extract standard JSON map tree profiles.'); }
+            };
+            fileReader.readAsText(event.target.files[0]);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
